@@ -1,30 +1,65 @@
-import { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { quiz_game_backend } from 'declarations/quiz_game_backend';
+import './index.scss';
 
 function App() {
-  const [greeting, setGreeting] = useState('');
+  const [currentQuestion, setCurrentQuestion] = useState('');
+  const [userAnswer, setUserAnswer] = useState('');
+  const [newQ, setNewQ] = useState('');
+  const [newA, setNewA] = useState('');
+  const [result, setResult] = useState(null);
 
-  function handleSubmit(event) {
-    event.preventDefault();
-    const name = event.target.elements.name.value;
-    quiz_game_backend.greet(name).then((greeting) => {
-      setGreeting(greeting);
-    });
-    return false;
-  }
+  const loadQuestion = async () => {
+    const question = await quiz_game_backend.getCurrentQuiz();
+    setCurrentQuestion(question);
+    setResult(null);
+    setUserAnswer('');
+    setNewQ('');
+    setNewA('');
+  };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    const res = await quiz_game_backend.submit(newQ, newA, userAnswer);
+    setResult(res);
+    await loadQuestion();
+  };
+
+  useEffect(() => {
+    loadQuestion();
+  }, []);
 
   return (
-    <main>
-      <img src="/logo2.svg" alt="DFINITY logo" />
-      <br />
-      <br />
-      <form action="#" onSubmit={handleSubmit}>
-        <label htmlFor="name">Enter your name: &nbsp;</label>
-        <input id="name" alt="Name" type="text" />
-        <button type="submit">Click Me!</button>
+    <div className="quiz-container">
+      <h1>Quiz Game</h1>
+      <p><strong>Pertanyaan:</strong> {currentQuestion}</p>
+      <form onSubmit={handleSubmit}>
+        <input
+          value={newQ}
+          onChange={(e) => setNewQ(e.target.value)}
+          placeholder="Pertanyaan baru"
+          required
+        />
+        <input
+          value={newA}
+          onChange={(e) => setNewA(e.target.value)}
+          placeholder="Jawaban baru"
+          required
+        />
+        <input
+          value={userAnswer}
+          onChange={(e) => setUserAnswer(e.target.value)}
+          placeholder="Jawaban untuk pertanyaan di atas"
+          required
+        />
+        <button type="submit">Submit</button>
       </form>
-      <section id="greeting">{greeting}</section>
-    </main>
+      {result !== null && (
+        <p className={result ? 'success' : 'error'}>
+          {result ? 'Jawaban kamu benar!' : 'Jawaban kamu salah!'}
+        </p>
+      )}
+    </div>
   );
 }
 
